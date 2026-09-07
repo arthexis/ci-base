@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: '["3.11", "3.12", "3.13", "3.14"]'
+      working-directory:
+        description: Project directory relative to the repository root
+        required: false
+        type: string
+        default: .
       install-command:
         description: Command used to install the project and test dependencies
         required: false
@@ -53,6 +58,7 @@ jobs:
     with:
       python-version: ${{ inputs.python-version }}
       test-python-versions: ${{ inputs.test-python-versions }}
+      working-directory: ${{ inputs.working-directory }}
       install-command: ${{ inputs.install-command }}
       test-command: ${{ inputs.test-command }}
       lint-paths: ${{ inputs.lint-paths }}
