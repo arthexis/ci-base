@@ -4,10 +4,15 @@ on:
   workflow_call:
     inputs:
       python-version:
-        description: Python version to use
+        description: Python version used for lint, build, and install checks
         required: false
         type: string
         default: "3.13"
+      test-python-versions:
+        description: JSON array of Python versions used for tests
+        required: false
+        type: string
+        default: '["3.13"]'
       install-command:
         description: Command used to install the project and test dependencies
         required: false
@@ -33,6 +38,11 @@ on:
         required: false
         type: boolean
         default: true
+      install-smoke-command:
+        description: Optional commands to run inside the clean wheel-install environment
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -42,8 +52,10 @@ jobs:
     uses: ./.github/workflows/python-ci.yml
     with:
       python-version: ${{ inputs.python-version }}
+      test-python-versions: ${{ inputs.test-python-versions }}
       install-command: ${{ inputs.install-command }}
       test-command: ${{ inputs.test-command }}
       lint-paths: ${{ inputs.lint-paths }}
       run-build: ${{ inputs.run-build }}
       run-install-check: ${{ inputs.run-install-check }}
+      install-smoke-command: ${{ inputs.install-smoke-command }}
