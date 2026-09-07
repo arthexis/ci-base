@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: '["3.11", "3.12", "3.13", "3.14"]'
+      working-directory:
+        description: Project directory relative to the repository root
+        required: false
+        type: string
+        default: .
       install-command:
         description: Command used to install the project before tests
         required: false
@@ -60,10 +65,13 @@ jobs:
       - name: Install CI tools
         run: python -m pip install --upgrade pip ruff
       - name: Install project
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.install-command }}
       - name: Ruff lint
+        working-directory: ${{ inputs.working-directory }}
         run: python -m ruff check ${{ inputs.lint-paths }}
       - name: Ruff format
+        working-directory: ${{ inputs.working-directory }}
         run: python -m ruff format --check ${{ inputs.lint-paths }}
 
   tests:
@@ -82,8 +90,10 @@ jobs:
       - name: Install CI tools
         run: python -m pip install --upgrade pip pytest
       - name: Install project
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.install-command }}
       - name: Tests
+        working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.test-command }}
 
   package:
@@ -99,11 +109,14 @@ jobs:
       - name: Install build tooling
         run: python -m pip install --upgrade pip build
       - name: Build distributions
+        working-directory: ${{ inputs.working-directory }}
         run: python -m build
       - name: Check distributions exist
+        working-directory: ${{ inputs.working-directory }}
         run: test -n "$(find dist -maxdepth 1 -type f \( -name '*.whl' -o -name '*.tar.gz' \) -print -quit)"
       - name: Clean wheel install
         if: inputs.run-install-check
+        working-directory: ${{ inputs.working-directory }}
         shell: bash
         run: |
           python -m venv /tmp/ci-base-install
@@ -112,6 +125,7 @@ jobs:
           /tmp/ci-base-install/bin/python -m pip check
       - name: Installed package smoke check
         if: inputs.run-install-check && inputs.install-smoke-command != ''
+        working-directory: ${{ inputs.working-directory }}
         shell: bash
         run: |
           source /tmp/ci-base-install/bin/activate
