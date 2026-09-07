@@ -2,7 +2,7 @@
 
 Generic CI foundation and GitHub repository template for Arthexis Python projects.
 
-The goal is to provide a small, reusable baseline for linting, formatting, tests, package builds, and clean-install smoke checks while leaving project-specific integration checks in each consuming repository.
+The goal is to provide a small, reusable baseline for linting, formatting, tests, package builds, clean-install smoke checks, and repository-health validation while leaving project-specific integration checks in each consuming repository.
 
 ## Baseline
 
@@ -17,6 +17,29 @@ Generated repositories get a default `CI` workflow that runs on pull requests an
 - read-only GitHub token permissions
 
 The reusable workflow accepts inputs for the Python version, install command, test command, lint paths, package build, and clean-install check.
+
+## Repository validator
+
+The template includes a small standard-library-only validator:
+
+```console
+python .ci/check_repo.py
+```
+
+For a generated Python repository it checks that the repository has:
+
+- a README
+- `.github/workflows/ci.yml`
+- a valid `pyproject.toml` with `[project]` name and version
+- a `tests/` directory containing at least one `test_*.py` module
+
+`ci-base` validates its own template-level structure with:
+
+```console
+python .ci/check_repo.py --template
+```
+
+The validator intentionally has no third-party dependencies, so it can run before project dependencies are installed and can later grow into the common repository-health entry point.
 
 ## Expected project shape
 
