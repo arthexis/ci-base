@@ -6,7 +6,7 @@ The goal is to provide a small, reusable baseline for linting, formatting, tests
 
 ## Baseline
 
-Generated repositories get a default `CI` workflow that runs on pull requests and pushes to `main`. It delegates to a reusable Python workflow with these defaults:
+Generated repositories get a default `CI` workflow that runs on pull requests and pushes to `main`. It calls the centrally maintained `arthexis/ci-base/.github/workflows/consumer-ci.yml@v1` workflow with these defaults:
 
 - Python 3.13
 - `ruff check .`
@@ -15,6 +15,8 @@ Generated repositories get a default `CI` workflow that runs on pull requests an
 - wheel and sdist build via `python -m build`
 - clean wheel installation followed by `pip check`
 - read-only GitHub token permissions
+
+The `v1` branch is the compatibility line for non-breaking CI improvements. Breaking policy changes should use a future major line such as `v2` so consuming repositories can opt in deliberately.
 
 The reusable workflow accepts inputs for the Python version, install command, test command, lint paths, package build, and clean-install check.
 
@@ -59,12 +61,12 @@ Project-specific services, databases, hardware, Django setup, privileged network
 
 ## Customizing a generated repository
 
-For simple changes, edit `.github/workflows/ci.yml` and pass inputs to the reusable workflow, for example:
+For simple changes, edit `.github/workflows/ci.yml` and pass inputs to the central workflow, for example:
 
 ```yaml
 jobs:
   python:
-    uses: ./.github/workflows/python-ci.yml
+    uses: arthexis/ci-base/.github/workflows/consumer-ci.yml@v1
     with:
       python-version: "3.12"
       install-command: python -m pip install -e ".[test]"
