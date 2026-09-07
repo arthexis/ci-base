@@ -1,0 +1,14 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    if: github.repository != 'arthexis/ci-base'
+    uses: ./.github/workflows/python-ci.yml
