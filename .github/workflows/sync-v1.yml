@@ -1,0 +1,28 @@
+name: Sync v1
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-v1
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'arthexis/ci-base'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward v1
+        shell: bash
+        run: |
+          git fetch origin v1
+          git merge-base --is-ancestor origin/v1 "$GITHUB_SHA"
+          git push origin "$GITHUB_SHA:refs/heads/v1"
