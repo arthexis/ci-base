@@ -9,15 +9,22 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  validate-template:
     if: github.repository == 'arthexis/ci-base'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
       - name: Compile validator
         run: python -m py_compile .ci/check_repo.py
       - name: Validate template
         run: python .ci/check_repo.py --template
+
+  exercise-reusable-ci:
+    if: github.repository == 'arthexis/ci-base'
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      working-directory: .ci/fixture
+      install-smoke-command: python -c "import ci_base_fixture; assert ci_base_fixture.answer() == 42"
