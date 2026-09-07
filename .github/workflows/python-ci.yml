@@ -7,12 +7,12 @@ on:
         description: Python version used for lint, build, and install checks
         required: false
         type: string
-        default: "3.13"
+        default: "3.14"
       test-python-versions:
         description: JSON array of Python versions used for the test matrix
         required: false
         type: string
-        default: '["3.13"]'
+        default: '["3.11", "3.12", "3.13", "3.14"]'
       install-command:
         description: Command used to install the project before tests
         required: false
