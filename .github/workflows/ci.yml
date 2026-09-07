@@ -11,4 +11,4 @@ permissions:
 jobs:
   python:
     if: github.repository != 'arthexis/ci-base'
-    uses: ./.github/workflows/python-ci.yml
+    uses: arthexis/ci-base/.github/workflows/consumer-ci.yml@v1
