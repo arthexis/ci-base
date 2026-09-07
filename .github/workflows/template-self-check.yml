@@ -1,0 +1,23 @@
+name: Template Self Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.repository == 'arthexis/ci-base'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Compile validator
+        run: python -m py_compile .ci/check_repo.py
+      - name: Validate template
+        run: python .ci/check_repo.py --template
