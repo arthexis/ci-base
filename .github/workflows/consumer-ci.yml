@@ -1,0 +1,49 @@
+name: Consumer CI
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: Python version to use
+        required: false
+        type: string
+        default: "3.13"
+      install-command:
+        description: Command used to install the project and test dependencies
+        required: false
+        type: string
+        default: python -m pip install -e .
+      test-command:
+        description: Command used to run tests
+        required: false
+        type: string
+        default: python -m pytest
+      lint-paths:
+        description: Paths passed to Ruff
+        required: false
+        type: string
+        default: .
+      run-build:
+        description: Build wheel and sdist
+        required: false
+        type: boolean
+        default: true
+      run-install-check:
+        description: Install the built wheel in a clean environment and run pip check
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      python-version: ${{ inputs.python-version }}
+      install-command: ${{ inputs.install-command }}
+      test-command: ${{ inputs.test-command }}
+      lint-paths: ${{ inputs.lint-paths }}
+      run-build: ${{ inputs.run-build }}
+      run-install-check: ${{ inputs.run-install-check }}
