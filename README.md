@@ -20,6 +20,19 @@ The `v1` branch is the compatibility line for non-breaking CI improvements. Brea
 
 The reusable workflow accepts inputs for the Python version, install command, test command, lint paths, package build, and clean-install check.
 
+## Local quality checks
+
+`ci-base` defines the canonical local Ruff workflow in `.ci/quality.sh`. Generated or synchronized consumers should carry the same helper so developers can run the exact lint/format policy before pushing:
+
+```console
+bash .ci/quality.sh --fix src tests
+bash .ci/quality.sh --check src tests
+```
+
+`--fix` applies safe Ruff fixes and formatting. `--check` is non-mutating and mirrors the Ruff portion of the shared Code Quality job. Ruff should not be duplicated in Linux sanity, smoke, compatibility, or project-specific test jobs; those jobs should focus on their distinct runtime or platform concerns.
+
+If no paths are supplied, the helper checks the repository root.
+
 ## Repository validator
 
 The template includes a small standard-library-only validator:
