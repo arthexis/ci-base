@@ -100,6 +100,22 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.test-command }}
 
+  compatibility:
+    name: Python compatibility
+    needs: tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all Python versions
+        shell: bash
+        env:
+          TEST_RESULT: ${{ needs.tests.result }}
+        run: |
+          if [[ "$TEST_RESULT" != "success" ]]; then
+            echo "Python compatibility matrix result: $TEST_RESULT"
+            exit 1
+          fi
+
   package:
     name: Package
     if: inputs.run-build
