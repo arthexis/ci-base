@@ -26,7 +26,7 @@ jobs:
 
   exercise-reusable-ci:
     if: github.repository == 'arthexis/ci-base'
-    uses: ./.github/workflows/python-ci.yml
+    uses: ./.github/workflows/consumer-ci.yml
     with:
       working-directory: .ci/fixture
       install-smoke-command: python -c "import ci_base_fixture; assert ci_base_fixture.answer() == 42"
