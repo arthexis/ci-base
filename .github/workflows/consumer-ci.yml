@@ -53,7 +53,34 @@ permissions:
   contents: read
 
 jobs:
+  branch-current:
+    name: Branch current
+    runs-on: ubuntu-latest
+    steps:
+      - name: Freshness check not required outside pull requests
+        if: github.event_name != 'pull_request'
+        run: echo "Branch freshness is only checked for pull requests."
+      - name: Check out pull request head
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require pull request branch to contain current base
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch --no-tags origin "$BASE_REF"
+          if ! git merge-base --is-ancestor "origin/$BASE_REF" HEAD; then
+            echo "::error::Pull request branch is behind $BASE_REF. Update the branch before running CI."
+            exit 1
+          fi
+
   python:
+    needs: branch-current
     uses: ./.github/workflows/python-ci.yml
     with:
       python-version: ${{ inputs.python-version }}
