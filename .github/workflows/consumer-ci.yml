@@ -50,7 +50,8 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  actions: write
+  contents: write
 
 jobs:
   branch-current:
