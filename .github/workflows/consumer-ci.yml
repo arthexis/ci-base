@@ -94,6 +94,7 @@ jobs:
     with:
       python-version: ${{ inputs.python-version }}
       test-python-versions: ${{ inputs.test-python-versions }}
+      checkout-ref: ${{ needs.autofix.outputs.head-sha }}
       working-directory: ${{ inputs.working-directory }}
       install-command: ${{ inputs.install-command }}
       test-command: ${{ inputs.test-command }}
