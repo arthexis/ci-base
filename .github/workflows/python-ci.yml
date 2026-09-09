@@ -50,14 +50,28 @@ on:
         default: ""
 
 permissions:
-  contents: read
+  actions: write
+  contents: write
 
 jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Check out internal pull request head
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Check out source
+        if: >-
+          github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name != github.repository
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-python@v7
@@ -69,6 +83,45 @@ jobs:
       - name: Install project
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.install-command }}
+      - name: Apply safe Ruff fixes
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          python -m ruff check ${{ inputs.lint-paths }} --fix --exit-zero
+          python -m ruff format ${{ inputs.lint-paths }}
+      - name: Commit Ruff fixes
+        id: ruff-fixes
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        shell: bash
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "style: apply Ruff autofixes"
+          git push origin "HEAD:$HEAD_REF"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Dispatch CI for autofixed commit
+        if: steps.ruff-fixes.outputs.changed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          workflow_path="${WORKFLOW_REF#${GITHUB_REPOSITORY}/}"
+          workflow_path="${workflow_path%@*}"
+          gh workflow run "$workflow_path" --ref "$HEAD_REF"
       - name: Ruff lint
         working-directory: ${{ inputs.working-directory }}
         run: python -m ruff check ${{ inputs.lint-paths }}
