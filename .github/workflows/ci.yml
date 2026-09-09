@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -17,4 +16,7 @@ concurrency:
 jobs:
   python:
     if: github.repository != 'arthexis/ci-base'
+    permissions:
+      actions: write
+      contents: write
     uses: arthexis/ci-base/.github/workflows/consumer-ci.yml@v1
