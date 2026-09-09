@@ -50,8 +50,7 @@ on:
         default: ""
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
 
 jobs:
   branch-current:
@@ -82,6 +81,9 @@ jobs:
 
   python:
     needs: branch-current
+    permissions:
+      actions: write
+      contents: write
     uses: ./.github/workflows/python-ci.yml
     with:
       python-version: ${{ inputs.python-version }}
