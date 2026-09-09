@@ -79,8 +79,17 @@ jobs:
             exit 1
           fi
 
-  python:
+  autofix:
     needs: branch-current
+    permissions:
+      contents: write
+    uses: ./.github/workflows/ruff-autofix.yml
+    with:
+      working-directory: ${{ inputs.working-directory }}
+      lint-paths: ${{ inputs.lint-paths }}
+
+  python:
+    needs: [branch-current, autofix]
     uses: ./.github/workflows/python-ci.yml
     with:
       python-version: ${{ inputs.python-version }}
