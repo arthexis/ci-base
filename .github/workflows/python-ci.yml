@@ -50,13 +50,15 @@ on:
         default: ""
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
 
 jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
     steps:
       - name: Check out internal pull request head
         if: >-
