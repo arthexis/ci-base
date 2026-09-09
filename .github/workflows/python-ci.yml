@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: '["3.11", "3.12", "3.13", "3.14"]'
+      checkout-ref:
+        description: Optional commit or ref to verify instead of the triggering event revision
+        required: false
+        type: string
+        default: ""
       working-directory:
         description: Project directory relative to the repository root
         required: false
@@ -59,6 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.checkout-ref || github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -86,6 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.checkout-ref || github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -123,6 +130,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.checkout-ref || github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
