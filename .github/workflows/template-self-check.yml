@@ -22,8 +22,12 @@ jobs:
         run: python -m py_compile .ci/check_repo.py audit.py
       - name: Validate template files
         run: python .ci/check_repo.py --template
-      - name: Exercise audit against ci-base itself
+      - name: Run audit contract tests
+        run: |
+          python -m pip install --upgrade pip pytest
+          python -m pytest tests/test_audit.py
+      - name: Exercise audit against template workflows
         run: |
           mkdir -p /tmp/ci-base-audit/.github/workflows
           cp templates/workflows/*.yml /tmp/ci-base-audit/.github/workflows/
-          python audit.py /tmp/ci-base-audit
+          python audit.py /tmp/ci-base-audit --no-ruleset
