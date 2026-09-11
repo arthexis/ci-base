@@ -14,6 +14,14 @@ class CheckResult:
     detail: str
 
 
+TEMPLATE_WORKFLOWS = (
+    "quality.yml",
+    "python-compatibility.yml",
+    "package.yml",
+    "clean-install.yml",
+)
+
+
 def _check_pyproject(root: Path) -> CheckResult:
     path = root / "pyproject.toml"
     if not path.is_file():
@@ -30,11 +38,7 @@ def _check_pyproject(root: Path) -> CheckResult:
 
     missing = [key for key in ("name", "version") if not project.get(key)]
     if missing:
-        return CheckResult(
-            "pyproject",
-            False,
-            "missing project field(s): " + ", ".join(missing),
-        )
+        return CheckResult("pyproject", False, "missing project field(s): " + ", ".join(missing))
 
     return CheckResult("pyproject", True, f"project={project['name']} version={project['version']}")
 
@@ -49,10 +53,18 @@ def _check_tests(root: Path) -> CheckResult:
 
 
 def _check_workflow(root: Path) -> CheckResult:
-    workflow = root / ".github" / "workflows" / "ci.yml"
-    if not workflow.is_file():
-        return CheckResult("workflow", False, "missing .github/workflows/ci.yml")
-    return CheckResult("workflow", True, "CI workflow present")
+    workflows = root / ".github" / "workflows"
+    if not workflows.is_dir() or not any(workflows.glob("*.yml")):
+        return CheckResult("workflow", False, "missing .github/workflows/*.yml")
+    return CheckResult("workflow", True, "workflow directory present")
+
+
+def _check_templates(root: Path) -> CheckResult:
+    directory = root / "templates" / "workflows"
+    missing = [name for name in TEMPLATE_WORKFLOWS if not (directory / name).is_file()]
+    if missing:
+        return CheckResult("templates", False, "missing: " + ", ".join(missing))
+    return CheckResult("templates", True, "canonical workflow templates present")
 
 
 def _check_readme(root: Path) -> CheckResult:
@@ -62,11 +74,10 @@ def _check_readme(root: Path) -> CheckResult:
     return CheckResult("readme", False, "missing README")
 
 
-def check_repo(root: Path, *, require_python_project: bool = True) -> list[CheckResult]:
-    checks = [_check_readme(root), _check_workflow(root)]
-    if require_python_project:
-        checks.extend((_check_pyproject(root), _check_tests(root)))
-    return checks
+def check_repo(root: Path, *, template: bool = False) -> list[CheckResult]:
+    if template:
+        return [_check_readme(root), _check_templates(root)]
+    return [_check_readme(root), _check_workflow(root), _check_pyproject(root), _check_tests(root)]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -75,12 +86,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--template",
         action="store_true",
-        help="validate only template-level files; do not require a Python package or tests",
+        help="validate ci-base's canonical template files",
     )
     args = parser.parse_args(argv)
 
     root = Path(args.path).resolve()
-    results = check_repo(root, require_python_project=not args.template)
+    results = check_repo(root, template=args.template)
 
     for result in results:
         status = "PASS" if result.ok else "FAIL"

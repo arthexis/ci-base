@@ -1,89 +1,62 @@
 # ci-base
 
-Generic CI foundation and GitHub repository template for Arthexis Python projects.
+Canonical CI templates and audit tooling for Arthexis Python repositories.
 
-The goal is to provide a small, reusable baseline for linting, formatting, tests, package builds, clean-install smoke checks, and repository-health validation while leaving project-specific integration checks in each consuming repository.
+`ci-base` is a **reference/template repository**, not a runtime workflow service. Consumer repositories should copy the workflow templates they need into their own `.github/workflows/` directory and then own those files locally. They should not call workflows from `arthexis/ci-base` with `uses:`.
 
-## Baseline
+This keeps CI execution, permissions, tokens, failures, and repository-specific customizations local to each project while preserving a common baseline that can be reviewed when useful.
 
-Generated repositories get a default `CI` workflow that runs on pull requests and pushes to `main`. It calls the centrally maintained `arthexis/ci-base/.github/workflows/consumer-ci.yml@v1` workflow with these defaults:
+## Workflow templates
 
-- Python 3.13
-- `ruff check .`
-- `ruff format --check .`
-- `pytest`
-- wheel and sdist build via `python -m build`
-- clean wheel installation followed by `pip check`
-- read-only GitHub token permissions
+The canonical workflow templates live in `templates/workflows/`:
 
-The `v1` branch is the compatibility line for non-breaking CI improvements. Breaking policy changes should use a future major line such as `v2` so consuming repositories can opt in deliberately.
+- `quality.yml` — Ruff lint and format checks
+- `python-compatibility.yml` — test matrix and compatibility aggregate
+- `package.yml` — build distributions and verify wheel installation
+- `clean-install.yml` — independent clean-install smoke check
 
-The reusable workflow accepts inputs for the Python version, install command, test command, lint paths, package build, and clean-install check.
+Copy them into a consumer repository rather than referencing this repository at runtime. Projects are expected to customize commands, supported Python versions, extras, services, and smoke checks as needed.
 
-## Local quality checks
+The templates intentionally favor independent workflows so required GitHub status checks remain explicit and repository-local.
 
-`ci-base` defines the canonical local Ruff workflow in `.ci/quality.sh`. Generated or synchronized consumers should carry the same helper so developers can run the exact lint/format policy before pushing:
+## Optional divergence audit
+
+`audit.py` compares the canonical templates with a repository's local workflows:
+
+```console
+python audit.py ../some-repository
+python audit.py ../some-repository --diff
+```
+
+It reports each canonical workflow as `MATCH`, `MISSING`, or `DIVERGED`. With `--diff`, divergent files include a unified diff.
+
+A divergent workflow is not inherently wrong: projects may need local differences. The audit exists to make those differences visible for review. It is **not** part of the required CI baseline and does not update or modify consumer repositories.
+
+## Local quality helper
+
+`.ci/quality.sh` remains available as a lightweight reference for local Ruff checks:
 
 ```console
 bash .ci/quality.sh --fix src tests
 bash .ci/quality.sh --check src tests
 ```
 
-`--fix` applies safe Ruff fixes and formatting. `--check` is non-mutating and mirrors the Ruff portion of the shared Code Quality job. Ruff should not be duplicated in Linux sanity, smoke, compatibility, or project-specific test jobs; those jobs should focus on their distinct runtime or platform concerns.
-
-If no paths are supplied, the helper checks the repository root.
+Consumers may copy or adapt it if useful.
 
 ## Repository validator
 
-The template includes a small standard-library-only validator:
+The standard-library-only validator remains available:
 
 ```console
 python .ci/check_repo.py
 ```
 
-For a generated Python repository it checks that the repository has:
-
-- a README
-- `.github/workflows/ci.yml`
-- a valid `pyproject.toml` with `[project]` name and version
-- a `tests/` directory containing at least one `test_*.py` module
-
-`ci-base` validates its own template-level structure with:
+For a generated Python repository it checks basic repository structure such as the README, workflow presence, `pyproject.toml`, and tests. `ci-base` can validate its template-level structure with:
 
 ```console
 python .ci/check_repo.py --template
 ```
 
-The validator intentionally has no third-party dependencies, so it can run before project dependencies are installed and can later grow into the common repository-health entry point.
+## Design rule
 
-## Expected project shape
-
-The default workflow assumes the generated repository is an installable Python project. At minimum, provide a `pyproject.toml` that can be installed with:
-
-```console
-python -m pip install -e .
-```
-
-Tests should be runnable with:
-
-```console
-python -m pytest
-```
-
-Project-specific services, databases, hardware, Django setup, privileged networking, or integration tests belong in the consuming repository rather than in `ci-base`.
-
-## Customizing a generated repository
-
-For simple changes, edit `.github/workflows/ci.yml` and pass inputs to the central workflow, for example:
-
-```yaml
-jobs:
-  python:
-    uses: arthexis/ci-base/.github/workflows/consumer-ci.yml@v1
-    with:
-      python-version: "3.12"
-      install-command: python -m pip install -e ".[test]"
-      test-command: python -m pytest tests
-```
-
-The template intentionally keeps project metadata and dependencies local to each repository rather than trying to share a universal `pyproject.toml`.
+`ci-base` defines a recommended starting point, not centrally enforced behavior. Changes here do not automatically alter existing repositories. Adoption of template updates should happen deliberately, normally through a PR in the consumer repository after reviewing any divergence reported by `audit.py`.
