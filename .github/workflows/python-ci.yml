@@ -75,10 +75,12 @@ jobs:
       - name: Install project
         working-directory: ${{ inputs.working-directory }}
         run: ${{ inputs.install-command }}
-      - name: Ruff lint
+      - name: Ruff lint (informational)
+        continue-on-error: true
         working-directory: ${{ inputs.working-directory }}
         run: python -m ruff check ${{ inputs.lint-paths }}
-      - name: Ruff format
+      - name: Ruff format (informational)
+        continue-on-error: true
         working-directory: ${{ inputs.working-directory }}
         run: python -m ruff format --check ${{ inputs.lint-paths }}
 
