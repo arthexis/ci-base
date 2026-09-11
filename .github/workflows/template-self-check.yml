@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   validate-template:
-    if: github.repository == 'arthexis/ci-base'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -19,14 +18,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
-      - name: Compile validator
-        run: python -m py_compile .ci/check_repo.py
-      - name: Validate template
+      - name: Compile tooling
+        run: python -m py_compile .ci/check_repo.py audit.py
+      - name: Validate template files
         run: python .ci/check_repo.py --template
-
-  exercise-reusable-ci:
-    if: github.repository == 'arthexis/ci-base'
-    uses: ./.github/workflows/consumer-ci.yml
-    with:
-      working-directory: .ci/fixture
-      install-smoke-command: python -c "import ci_base_fixture; assert ci_base_fixture.answer() == 42"
+      - name: Exercise audit against ci-base itself
+        run: |
+          mkdir -p /tmp/ci-base-audit/.github/workflows
+          cp templates/workflows/*.yml /tmp/ci-base-audit/.github/workflows/
+          python audit.py /tmp/ci-base-audit
