@@ -87,6 +87,23 @@ def _has_quality_commands(text: str) -> bool:
     return RUFF_CHECK in text and RUFF_FORMAT in text
 
 
+def _depends_on_quality(
+    jobs: dict[str, dict[str, Any]], job_id: str, seen: set[str] | None = None
+) -> bool:
+    if job_id == "quality":
+        return True
+    if seen is None:
+        seen = set()
+    if job_id in seen:
+        return False
+    seen.add(job_id)
+
+    job = jobs.get(job_id)
+    if job is None:
+        return False
+    return any(_depends_on_quality(jobs, dependency, seen) for dependency in job.get("needs", []))
+
+
 def audit_workflows(target: Path) -> list[str]:
     findings: list[str] = []
     index = _job_index(target)
@@ -107,11 +124,12 @@ def audit_workflows(target: Path) -> list[str]:
         entry = index.get(context)
         if entry is None:
             continue
-        path, _, job = entry
+        path, job_id, _ = entry
         text = path.read_text(encoding="utf-8")
-        if "quality" not in job.get("needs", []):
-            findings.append(f"{path}: {context} must declare needs: quality")
-        quality_job = _jobs(text).get("quality")
+        jobs = _jobs(text)
+        if not _depends_on_quality(jobs, job_id):
+            findings.append(f"{path}: {context} must depend on quality before running")
+        quality_job = jobs.get("quality")
         if quality_job is None:
             findings.append(f"{path}: missing leading quality job")
         elif not _has_quality_commands("\n".join(quality_job.get("lines", []))):
