@@ -123,3 +123,14 @@ consumer's customized playbooks.
 
 `deployment_audit.py` reports missing deployment files and forbidden
 cross-repository CI calls without modifying the target.
+
+### ci-base's own CI
+
+CI runs on pull requests, with standalone quality, wheel-build and Python
+compatibility gates. The workflow retains the existing GitHub ruleset check
+names (`exercise-reusable-ci / python / Quality`,
+`exercise-reusable-ci / python / Package`, and
+`exercise-reusable-ci / python / Python compatibility`) while no longer
+calling another repository's workflows. The separate bootstrap validation
+job exercises the generated Ansible starter. This mirrors the local validation
+pattern used by CSMS and GWay Remote, rather than relying on reusable CI.
