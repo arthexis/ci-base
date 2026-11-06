@@ -102,3 +102,24 @@ ci-base catalog. Run `python bootstrap.py my-service --ansible`, then move
 the generated project files to the repository root and remove the catalog
 files before first use. For the cleanest result, generate locally and push
 the generated directory to a new empty GitHub repository instead.
+
+### Project profiles and deployment audit
+
+```sh
+python bootstrap.py sample-lib --profile python-library
+python bootstrap.py sample-service --profile python-service
+python bootstrap.py sample-appliance --profile ansible-service
+python deployment_audit.py ../existing-repository --json
+```
+
+The generated Ansible role can install a prebuilt wheel with
+`app_wheel_path` and run `app_healthcheck_command`. Use a unique
+`APP_RELEASE_ID` per immutable artifact. Real applications must configure
+their executable, service settings and health check; no production deployment
+is performed by CI. The bootstrap validation workflow installs the starter
+on its disposable Ubuntu runner twice and asserts the second run has zero
+changes. This is a scaffold-level idempotence test, not a guarantee for a
+consumer's customized playbooks.
+
+`deployment_audit.py` reports missing deployment files and forbidden
+cross-repository CI calls without modifying the target.
