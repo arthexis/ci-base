@@ -43,7 +43,7 @@ def initialize(target: Path, name: str, *, ansible: bool) -> None:
         shutil.copy2(workflow, workflows / workflow.name)
     if ansible:
         source = ROOT / "templates" / "deployment"
-        shutil.copytree(source, target, dirs_exist_ok=True)
+        shutil.copytree(source, target, dirs_exist_ok=True, ignore=shutil.ignore_patterns("README.md", ".gitignore"))
         defaults = target / "ansible" / "roles" / "app" / "defaults" / "main.yml"
         defaults.write_text(defaults.read_text().replace("example-app", name))
         deploy = target / "deploy.sh"
