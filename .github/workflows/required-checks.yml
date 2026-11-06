@@ -1,0 +1,60 @@
+name: exercise-reusable-ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  quality:
+    name: python / Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate Python source
+        run: |
+          python -m compileall -q bootstrap.py deployment_audit.py audit.py .ci tests
+          python -m pip install pytest
+          python -m pytest -q tests/test_bootstrap.py tests/test_deployment_audit.py tests/test_audit.py
+  package:
+    name: python / Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Generate and build standalone project
+        run: |
+          python -m pip install build
+          python bootstrap.py ci-sample --profile python-library --output /tmp/ci-sample
+          cd /tmp/ci-sample
+          python -m build
+          python -m venv /tmp/ci-base-wheel-test
+          /tmp/ci-base-wheel-test/bin/python -m pip install dist/*.whl
+          /tmp/ci-base-wheel-test/bin/python -m pip check
+  compatibility:
+    name: python / Python compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Exercise generator on supported Python
+        run: |
+          python bootstrap.py ci-compat --profile ansible-service --output /tmp/ci-compat
+          python .ci/check_repo.py /tmp/ci-compat
