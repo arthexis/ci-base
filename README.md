@@ -85,3 +85,20 @@ Template repository**. GitHub will let you generate a new repository with
 a snapshot of the files; future template changes do not propagate
 automatically. Copying the CI/Ansible templates into a new repository is a
 deliberate initialization step, not a runtime dependency.
+
+### Generate a clean standalone project
+
+```sh
+python bootstrap.py my-service --ansible
+# or omit --ansible for a Python-only library
+```
+
+This creates `my-service/` with only the selected project files: Python package,
+local workflows, tests and optional Ansible. It does **not** copy audit tooling,
+template catalog files or cross-repository workflow calls.
+
+If using GitHub's **Use this template**, the initial repository contains the
+ci-base catalog. Run `python bootstrap.py my-service --ansible`, then move
+the generated project files to the repository root and remove the catalog
+files before first use. For the cleanest result, generate locally and push
+the generated directory to a new empty GitHub repository instead.
