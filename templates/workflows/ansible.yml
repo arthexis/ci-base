@@ -1,0 +1,24 @@
+name: Ansible
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  validate:
+    name: Ansible syntax and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Ansible
+        run: python -m pip install ansible-core ansible-lint
+      - name: Syntax check
+        run: ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/install.yml --syntax-check
+      - name: Lint playbooks
+        run: ansible-lint ansible/playbooks/ || true
+        # Remove '|| true' after adapting role defaults and fixing baseline lint warnings.
+      - name: Assert no cross-repository workflow dependency
+        run: |
+          if grep -RE 'uses: *[^[:space:]]+/.github/workflows/' .github/workflows; then
+            echo "Reusable workflows from other repositories are not allowed" >&2
+            exit 1
+          fi
