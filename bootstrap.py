@@ -12,7 +12,11 @@ ROOT = Path(__file__).resolve().parent
 NAME = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 
 
-def initialize(target: Path, name: str, *, ansible: bool) -> None:
+def initialize(target: Path, name: str, *, ansible: bool = False, profile: str | None = None) -> None:
+    if profile is not None:
+        if profile not in ('python-library', 'python-service', 'ansible-service'):
+            raise ValueError('unsupported profile')
+        ansible = profile == 'ansible-service'
     if not NAME.fullmatch(name):
         raise ValueError("project name must be lowercase kebab-case")
     if target.exists() and any(target.iterdir()):
@@ -41,6 +45,9 @@ def initialize(target: Path, name: str, *, ansible: bool) -> None:
         if workflow.name == "ansible.yml" and not ansible:
             continue
         shutil.copy2(workflow, workflows / workflow.name)
+    if profile in ("python-service", "ansible-service"):
+        service = target / "src" / package / "__main__.py"
+        service.write_text('def main():\n    print("Service starter: replace with application entrypoint")\n\nif __name__ == "__main__":\n    main()\n')
     if ansible:
         source = ROOT / "templates" / "deployment"
         shutil.copytree(source, target, dirs_exist_ok=True, ignore=shutil.ignore_patterns("README.md", ".gitignore"))
@@ -58,10 +65,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("name", help="lowercase kebab-case project name")
     parser.add_argument("--output", type=Path, help="output directory (default: ./<name>)")
-    parser.add_argument("--ansible", action="store_true", help="include deployment scaffold")
+    parser.add_argument("--ansible", action="store_true", help="legacy alias for --profile ansible-service")
+    parser.add_argument("--profile", choices=("python-library", "python-service", "ansible-service"), default=None)
     args = parser.parse_args(argv)
     try:
-        initialize((args.output or Path(args.name)).resolve(), args.name, ansible=args.ansible)
+        initialize((args.output or Path(args.name)).resolve(), args.name, ansible=args.ansible, profile=args.profile)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     print(f"Created {args.name} in {(args.output or Path(args.name)).resolve()}")
