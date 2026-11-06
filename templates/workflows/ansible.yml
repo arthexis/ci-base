@@ -14,8 +14,7 @@ jobs:
       - name: Syntax check
         run: ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/install.yml --syntax-check
       - name: Lint playbooks
-        run: ansible-lint ansible/playbooks/ || true
-        # Remove '|| true' after adapting role defaults and fixing baseline lint warnings.
+        run: ansible-lint --profile basic ansible/playbooks/
       - name: Assert no cross-repository workflow dependency
         run: |
           if grep -RE 'uses: *[^[:space:]]+/.github/workflows/' .github/workflows; then
