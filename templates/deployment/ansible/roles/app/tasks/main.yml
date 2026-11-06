@@ -1,0 +1,52 @@
+---
+- name: Create application group
+  ansible.builtin.group:
+    name: "{{ app_group }}"
+    system: true
+
+- name: Create application user
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    system: true
+    create_home: false
+    shell: /usr/sbin/nologin
+
+- name: Create release directory
+  ansible.builtin.file:
+    path: "{{ app_root }}/releases/{{ app_release_id }}"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0755"
+
+- name: Install example release marker
+  ansible.builtin.copy:
+    dest: "{{ app_root }}/releases/{{ app_release_id }}/RELEASE"
+    content: "{{ app_release_id }}\n"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0644"
+
+- name: Point current to selected release
+  ansible.builtin.file:
+    src: "{{ app_root }}/releases/{{ app_release_id }}"
+    dest: "{{ app_root }}/current"
+    state: link
+    force: true
+
+- name: Install systemd unit when enabled
+  ansible.builtin.template:
+    src: app.service.j2
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+    mode: "0644"
+  when: app_service_enabled | bool
+  notify: Restart application
+
+- name: Enable and start service when enabled
+  ansible.builtin.systemd_service:
+    name: "{{ app_name }}"
+    daemon_reload: true
+    enabled: true
+    state: started
+  when: app_service_enabled | bool
