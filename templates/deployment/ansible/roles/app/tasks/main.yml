@@ -50,3 +50,30 @@
     enabled: true
     state: started
   when: app_service_enabled | bool
+
+- name: Copy built wheel into release when supplied
+  ansible.builtin.copy:
+    src: "{{ app_wheel_path }}"
+    dest: "{{ app_root }}/releases/{{ app_release_id }}/{{ app_wheel_path | basename }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: "0644"
+  when: app_wheel_path | length > 0
+
+- name: Create release virtual environment
+  ansible.builtin.command:
+    cmd: "python3 -m venv {{ app_root }}/releases/{{ app_release_id }}/venv"
+    creates: "{{ app_root }}/releases/{{ app_release_id }}/venv/bin/python"
+  when: app_wheel_path | length > 0
+
+- name: Install wheel into release virtual environment
+  ansible.builtin.pip:
+    name: "{{ app_root }}/releases/{{ app_release_id }}/{{ app_wheel_path | basename }}"
+    virtualenv: "{{ app_root }}/releases/{{ app_release_id }}/venv"
+    state: present
+  when: app_wheel_path | length > 0
+
+- name: Check application health when configured
+  ansible.builtin.command: "{{ app_healthcheck_command }}"
+  changed_when: false
+  when: app_healthcheck_command | length > 0
