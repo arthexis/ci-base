@@ -60,3 +60,28 @@ python .ci/check_repo.py --template
 ## Design rule
 
 `ci-base` defines a recommended starting point, not centrally enforced behavior. Changes here do not automatically alter existing repositories. Adoption of template updates should happen deliberately, normally through a PR in the consumer repository after reviewing any divergence reported by `audit.py`.
+
+## Optional self-contained Ansible starter
+
+A copyable starter lives in [templates/deployment](templates/deployment/README.md).
+It provides a local `deploy.sh`, a local inventory, an Ansible role, optional
+systemd unit, immutable release directory convention, verification playbook,
+and minimal contract tests. Copy its **contents** into the consumer repository
+and adapt the placeholder application installation before any production deploy.
+
+Copy `templates/workflows/ansible.yml` to the consumer's
+`.github/workflows/ansible.yml` to validate Ansible locally. This workflow
+never invokes ci-base or a remote server. The default inventory targets
+localhost only. Deployment to real hosts is explicitly configured by each
+consumer; no secrets or hostnames are shipped.
+
+The Ansible starter is **optional** for libraries and non-deployable projects.
+It is not an operational deployment of an application out of the box.
+
+### GitHub template repository
+
+After this PR passes checks and is merged, enable **Settings → General →
+Template repository**. GitHub will let you generate a new repository with
+a snapshot of the files; future template changes do not propagate
+automatically. Copying the CI/Ansible templates into a new repository is a
+deliberate initialization step, not a runtime dependency.
