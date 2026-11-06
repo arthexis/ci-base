@@ -32,3 +32,10 @@ jobs:
           cd /tmp/sample-app
           ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/install.yml --syntax-check
           ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/verify.yml --syntax-check
+      - name: Verify actual install and idempotence on disposable runner
+        run: |
+          cd /tmp/sample-app
+          sudo env "PATH=$PATH" ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/install.yml
+          sudo env "PATH=$PATH" ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/verify.yml
+          sudo env "PATH=$PATH" ansible-playbook -i ansible/inventory/localhost.yml ansible/playbooks/install.yml | tee /tmp/ansible-second-run.log
+          grep -Eq 'changed=0([[:space:]]|$)' /tmp/ansible-second-run.log
