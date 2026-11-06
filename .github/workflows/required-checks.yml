@@ -1,0 +1,73 @@
+name: exercise-reusable-ci
+# Standalone PR CI. Stable job names preserve existing main ruleset contexts.
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    name: exercise-reusable-ci / python / Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate Python source
+        run: |
+          python -m compileall -q bootstrap.py deployment_audit.py audit.py .ci tests
+          python -m pip install pytest
+          python -m pytest -q tests
+  package:
+    name: exercise-reusable-ci / python / Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Generate and build standalone project
+        run: |
+          python -m pip install build
+          python bootstrap.py ci-sample --profile python-library --output /tmp/ci-sample
+          cd /tmp/ci-sample
+          python -m build
+          test -n "$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
+          python -m venv /tmp/ci-base-wheel-test
+          /tmp/ci-base-wheel-test/bin/python -m pip install dist/*.whl
+          /tmp/ci-base-wheel-test/bin/python -m pip check
+  compatibility-matrix:
+    name: Compatibility (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Exercise generator on supported Python
+        run: |
+          python bootstrap.py ci-compat --profile ansible-service --output /tmp/ci-compat
+          python .ci/check_repo.py /tmp/ci-compat
+          python -m pip install pytest
+          python -m pytest -q tests/test_bootstrap.py tests/test_deployment_audit.py
+  compatibility:
+    name: exercise-reusable-ci / python / Python compatibility
+    needs: compatibility-matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful matrix
+        env:
+          MATRIX_RESULT: ${{ needs.compatibility-matrix.result }}
+        run: test "$MATRIX_RESULT" = success

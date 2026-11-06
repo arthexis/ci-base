@@ -1,0 +1,35 @@
+---
+- name: Roll back to a previously installed immutable release
+  hosts: all
+  gather_facts: false
+  become: true
+  vars_files:
+    - ../roles/app/defaults/main.yml
+  tasks:
+    - name: Require explicit rollback release
+      ansible.builtin.assert:
+        that:
+          - rollback_release_id is defined
+          - rollback_release_id | length > 0
+          - rollback_release_id is match('^[A-Za-z0-9._-]+$')
+    - name: Verify requested release exists
+      ansible.builtin.stat:
+        path: "{{ app_root }}/releases/{{ rollback_release_id }}/RELEASE"
+      register: rollback_target
+    - name: Refuse unknown release
+      ansible.builtin.assert:
+        that: rollback_target.stat.exists
+    - name: Restore current symlink
+      ansible.builtin.file:
+        src: "{{ app_root }}/releases/{{ rollback_release_id }}"
+        dest: "{{ app_root }}/current"
+        state: link
+        force: true
+      register: rollback_link
+    - name: Restart service if enabled and release changed
+      ansible.builtin.systemd_service:
+        name: "{{ app_name }}"
+        state: restarted
+      when:
+        - app_service_enabled | bool
+        - rollback_link.changed

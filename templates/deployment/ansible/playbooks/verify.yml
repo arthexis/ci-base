@@ -1,0 +1,15 @@
+---
+- name: Verify deployed release
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - ../roles/app/defaults/main.yml
+  tasks:
+    - name: Read current release marker
+      ansible.builtin.slurp:
+        src: "{{ app_root }}/current/RELEASE"
+      register: release_marker
+    - name: Assert expected release
+      ansible.builtin.assert:
+        that:
+          - "(release_marker.content | b64decode | trim) == app_release_id"
